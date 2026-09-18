@@ -1,0 +1,266 @@
+[
+  {
+    "day": 1,
+    "slug": "day-01-how-to-design-apis-like-a-senior-engineer-rest-graphql-auth-security",
+    "title": "How to Design APIs Like a Senior Engineer (REST, GraphQL, Auth, Security)",
+    "video_url": "https://www.youtube.com/watch?v=7iHl71nt49o"
+  },
+  {
+    "day": 2,
+    "slug": "day-02-api-security-explained-rate-limiting-cors-sql-injection-csrf-xss-more",
+    "title": "API Security Explained: Rate Limiting, CORS, SQL Injection, CSRF, XSS & More",
+    "video_url": "https://www.youtube.com/watch?v=FsB_nRGdeLs"
+  },
+  {
+    "day": 3,
+    "slug": "day-03-authentication-explained-when-to-use-basic-bearer-oauth2-jwt-sso",
+    "title": "Authentication Explained: When to Use Basic, Bearer, OAuth2, JWT & SSO",
+    "video_url": "https://www.youtube.com/watch?v=9JPnN1Z_iSY"
+  },
+  {
+    "day": 4,
+    "slug": "day-04-7-authentication-concepts-every-developer-should-know",
+    "title": "7 Authentication Concepts Every Developer Should Know",
+    "video_url": "https://www.youtube.com/watch?v=iX8g4LqF8p8"
+  },
+  {
+    "day": 5,
+    "slug": "day-05-api-protocols-explained-when-to-use-http-websockets-grpc-more",
+    "title": "API Protocols Explained: When to Use HTTP, WebSockets, gRPC & More",
+    "video_url": "https://www.youtube.com/watch?v=lcPcyNAEZgo"
+  },
+  {
+    "day": 6,
+    "slug": "day-06-api-design-101-from-basics-to-best-practices",
+    "title": "API Design 101: From Basics to Best Practices",
+    "video_url": "https://www.youtube.com/watch?v=7QfswaV0re4"
+  },
+  {
+    "day": 7,
+    "slug": "day-07-database-replication-sharding-explained",
+    "title": "Database Replication & Sharding Explained",
+    "video_url": "https://www.youtube.com/watch?v=jLEp1XI_L6Q"
+  },
+  {
+    "day": 8,
+    "slug": "day-08-how-to-scale-like-a-senior-engineer-servers-dbs-lbs-spofs",
+    "title": "How to Scale Like a Senior Engineer (Servers, DBs, LBs, SPOFs)",
+    "video_url": "https://www.youtube.com/watch?v=iPaXlFUHJp0"
+  },
+  {
+    "day": 9,
+    "slug": "day-09-stateful-vs-stateless-architectures-explained",
+    "title": "Stateful vs Stateless Architectures Explained",
+    "video_url": "https://www.youtube.com/watch?v=20tpk8A_xa0"
+  },
+  {
+    "day": 10,
+    "slug": "day-10-message-queues-in-system-design",
+    "title": "Message Queues in System Design",
+    "video_url": "https://www.youtube.com/watch?v=DYFocSiPOl8"
+  },
+  {
+    "day": 11,
+    "slug": "day-11-rest-api-basics-best-practices-explained",
+    "title": "REST API Basics & Best Practices Explained",
+    "video_url": "https://www.youtube.com/watch?v=DkSeXHS0kAQ"
+  },
+  {
+    "day": 12,
+    "slug": "day-12-6-system-design-interview-concepts",
+    "title": "6 System Design Interview Concepts",
+    "video_url": "https://www.youtube.com/watch?v=HpE0TAuBv3c"
+  },
+  {
+    "day": 13,
+    "slug": "day-13-system-design-interview-mastering-databases",
+    "title": "System Design Interview: Mastering Databases",
+    "video_url": "https://www.youtube.com/watch?v=P-IY5BEl6Y4"
+  },
+  {
+    "day": 14,
+    "slug": "day-14-object-storage-blobs-explained-for-system-design",
+    "title": "Object Storage (BLOBs) Explained for System Design",
+    "video_url": "https://www.youtube.com/watch?v=dEcQK4-pqiw"
+  },
+  {
+    "day": 15,
+    "slug": "day-15-map-reduce-explained-with-example-system-design",
+    "title": "Map Reduce explained with example | System Design",
+    "video_url": "https://www.youtube.com/watch?v=neoXVthw22Q"
+  },
+  {
+    "day": 16,
+    "slug": "day-16-system-design-concepts-architecture-of-production-web-apps",
+    "title": "System Design Concepts: Architecture of Production Web Apps",
+    "video_url": "https://www.youtube.com/watch?v=xGqmdt_7auc"
+  },
+  {
+    "day": 17,
+    "slug": "day-17-api-design-101-from-basics-to-best-practices",
+    "title": "API Design 101: From Basics to Best Practices",
+    "video_url": "https://www.youtube.com/watch?v=pH7ZT9cOL0k"
+  },
+  {
+    "day": 18,
+    "slug": "day-18-cicd-pipeline-building-a-real-world-example-with-circleci",
+    "title": "CI/CD Pipeline: Building a Real-World Example with CircleCI",
+    "video_url": "https://www.youtube.com/watch?v=Z90oD_ovLBg"
+  },
+  {
+    "day": 19,
+    "slug": "day-19-nosql-databases-explained-all-types-when-to-use-them",
+    "title": "NoSQL Databases Explained: All Types & When to Use Them",
+    "video_url": "https://www.youtube.com/watch?v=08Ti49jhE8s"
+  },
+  {
+    "day": 20,
+    "slug": "day-20-how-signed-urls-cookies-protect-your-cloud-data",
+    "title": "How Signed URLs & Cookies Protect Your Cloud Data",
+    "video_url": "https://www.youtube.com/watch?v=Bbp6peXp0WU"
+  },
+  {
+    "day": 21,
+    "slug": "day-21-the-ultimate-guide-to-caching-and-cdns",
+    "title": "The Ultimate Guide to Caching and CDNs",
+    "video_url": "https://www.youtube.com/watch?v=RCdAGvtTYI0"
+  },
+  {
+    "day": 22,
+    "slug": "day-22-how-to-configure-and-provision-database-sharding",
+    "title": "How to Configure and Provision Database Sharding",
+    "video_url": "https://www.youtube.com/watch?v=98_OJ1Eoibw"
+  },
+  {
+    "day": 23,
+    "slug": "day-23-database-scaling-basics-explained",
+    "title": "Database Scaling Basics Explained",
+    "video_url": "https://www.youtube.com/watch?v=CXOZd2OkGGA"
+  },
+  {
+    "day": 24,
+    "slug": "day-24-single-point-of-failure-spof-in-system-design",
+    "title": "Single Point of Failure (SPOF) in System Design",
+    "video_url": "https://www.youtube.com/watch?v=Iy2YqgjXtRM"
+  },
+  {
+    "day": 25,
+    "slug": "day-25-load-balancers-explained-in-7-minutes",
+    "title": "Load Balancers Explained in 7 Minutes",
+    "video_url": "https://www.youtube.com/watch?v=sXUh9vuOTXk"
+  },
+  {
+    "day": 26,
+    "slug": "day-26-ace-your-system-design-interview-essential-application-protocols-explained",
+    "title": "Ace Your System Design Interview: Essential Application Protocols Explained",
+    "video_url": "https://www.youtube.com/watch?v=Vc-PGeu94c4"
+  },
+  {
+    "day": 27,
+    "slug": "day-27-vertical-vs-horizontal-scaling-in-system-design",
+    "title": "Vertical vs Horizontal Scaling in System Design",
+    "video_url": "https://www.youtube.com/watch?v=1v687z1rhNA"
+  },
+  {
+    "day": 28,
+    "slug": "day-28-system-design-concepts-computer-architecture",
+    "title": "System Design Concepts: Computer Architecture",
+    "video_url": "https://www.youtube.com/watch?v=um06azpAmSk"
+  },
+  {
+    "day": 29,
+    "slug": "day-29-transport-layer-explained-tcp-vs-udp",
+    "title": "Transport Layer Explained: TCP vs UDP",
+    "video_url": "https://www.youtube.com/watch?v=QyrHol2Ylfo"
+  },
+  {
+    "day": 30,
+    "slug": "day-30-system-design-concepts-networking-essentials",
+    "title": "System Design Concepts: Networking Essentials",
+    "video_url": "https://www.youtube.com/watch?v=RMu6VAfew88"
+  },
+  {
+    "day": 31,
+    "slug": "day-31-system-design-concepts-meeting-design-requirements",
+    "title": "System Design Concepts: Meeting Design Requirements",
+    "video_url": "https://www.youtube.com/watch?v=YhC7yYDG6i0"
+  },
+  {
+    "day": 32,
+    "slug": "day-32-data-centers-in-system-design",
+    "title": "Data Centers in System Design",
+    "video_url": "https://www.youtube.com/watch?v=6PjFbvaDhKU"
+  },
+  {
+    "day": 33,
+    "slug": "day-33-proxy-servers-how-proxies-work",
+    "title": "Proxy Servers: How Proxies Work",
+    "video_url": "https://www.youtube.com/watch?v=sYhKiPzGPYc"
+  },
+  {
+    "day": 34,
+    "slug": "day-34-the-essential-guide-to-load-balancing-strategies-and-techniques",
+    "title": "The Essential Guide to Load Balancing Strategies and Techniques",
+    "video_url": "https://www.youtube.com/watch?v=mpQfVNcLHGA"
+  },
+  {
+    "day": 35,
+    "slug": "day-35-sql-tutorial-for-beginners",
+    "title": "SQL Tutorial for Beginners",
+    "video_url": "https://www.youtube.com/watch?v=4TymQ6qQjzc"
+  },
+  {
+    "day": 36,
+    "slug": "day-36-sql-transactions-and-acid-properties",
+    "title": "SQL Transactions and ACID Properties",
+    "video_url": "https://www.youtube.com/watch?v=LoxO-P7hhUQ"
+  },
+  {
+    "day": 37,
+    "slug": "day-37-hands-on-load-balancer-setup-distribute-traffic-across-servers",
+    "title": "Hands-On Load Balancer Setup: Distribute Traffic Across Servers",
+    "video_url": "https://www.youtube.com/watch?v=CyWTPmlkOzU"
+  },
+  {
+    "day": 38,
+    "slug": "day-38-rest-vs-graphql",
+    "title": "REST vs GraphQL",
+    "video_url": "https://www.youtube.com/watch?v=FI_jvrgT52E"
+  },
+  {
+    "day": 39,
+    "slug": "day-39-how-to-design-apis-like-a-senior-engineer-rest-graphql-auth-security",
+    "title": "How to Design APIs Like a Senior Engineer (REST, GraphQL, Auth, Security)",
+    "video_url": "https://www.youtube.com/watch?v=Rrd6xkyjPB8"
+  },
+  {
+    "day": 40,
+    "slug": "day-40-system-design-explained-apis-databases-caching-cdns-load-balancing-production",
+    "title": "System Design Explained: APIs, Databases, Caching, CDNs, Load Balancing & Production Infra",
+    "video_url": "https://www.youtube.com/watch?v=oYxTTirKY8M"
+  },
+  {
+    "day": 41,
+    "slug": "day-41-every-aws-service-you-need-to-know",
+    "title": "Every AWS Service You Need To Know",
+    "video_url": "https://www.youtube.com/watch?v=n28iOV_Y_tQ"
+  },
+  {
+    "day": 42,
+    "slug": "day-42-how-message-queues-handle-traffic-spikes",
+    "title": "How Message Queues Handle Traffic Spikes",
+    "video_url": "https://www.youtube.com/watch?v=_a8z6naCVio"
+  },
+  {
+    "day": 43,
+    "slug": "day-43-7-database-types-every-software-engineer-should-know",
+    "title": "7 Database Types Every Software Engineer Should Know",
+    "video_url": "https://www.youtube.com/watch?v=5coDJ2b4Xuo"
+  },
+  {
+    "day": 44,
+    "slug": "day-44-fix-the-n1-problem-and-5-other-sql-mistakes",
+    "title": "Fix the N+1 Problem and 5 Other SQL Mistakes",
+    "video_url": "https://www.youtube.com/watch?v=yZGhVlgCtxA"
+  }
+]
