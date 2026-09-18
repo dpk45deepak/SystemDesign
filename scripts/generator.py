@@ -51,10 +51,10 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 GEMINI_FALLBACK_MODELS = tuple(
     model.strip()
-    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "gemini-2.5-flash-lite").split(",")
+    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "gemini-3.6-flash").split(",")
     if model.strip()
 )
 GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
