@@ -29,6 +29,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 try:
@@ -50,7 +51,16 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_FALLBACK_MODELS = tuple(
+    model.strip()
+    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "gemini-2.5-flash-lite").split(",")
+    if model.strip()
+)
+GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
+GEMINI_RETRY_DELAY_SECONDS = float(os.environ.get("GEMINI_RETRY_DELAY_SECONDS", "2"))
+TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
+FALLBACK_STATUS_CODES = TRANSIENT_STATUS_CODES | {404}
 
 # Markers that must exist in README.md so we know where to look for the
 # progress table. See README.md for the actual table.
@@ -159,16 +169,52 @@ def call_gemini(prompt: str) -> str:
 
     client = genai.Client(api_key=api_key)
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=genai_types.GenerateContentConfig(
-            temperature=0.8,
-            max_output_tokens=8192,
-        ),
+    models = tuple(dict.fromkeys((GEMINI_MODEL, *GEMINI_FALLBACK_MODELS)))
+    config = genai_types.GenerateContentConfig(
+        temperature=0.8,
+        max_output_tokens=8192,
     )
+    last_error: Exception | None = None
+    text = ""
 
-    text = (response.text or "").strip()
+    for model in models:
+        for attempt in range(GEMINI_MAX_RETRIES + 1):
+            try:
+                chat = client.chats.create(model=model, config=config)
+                response = chat.send_message(prompt)
+                text = (response.text or "").strip()
+                last_error = None
+                break
+            except Exception as exc:
+                last_error = exc
+                status_code = getattr(exc, "status_code", None)
+                is_transient = status_code in TRANSIENT_STATUS_CODES
+                if not is_transient or attempt >= GEMINI_MAX_RETRIES:
+                    break
+
+                delay = GEMINI_RETRY_DELAY_SECONDS * (2**attempt)
+                print(
+                    f"Gemini model {model} returned {status_code}; "
+                    f"retrying in {delay:g}s ({attempt + 1}/{GEMINI_MAX_RETRIES})...",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+        else:
+            continue
+
+        if last_error is None:
+            break
+
+        status_code = getattr(last_error, "status_code", None)
+        if status_code not in FALLBACK_STATUS_CODES:
+            break
+        print(f"Gemini model {model} failed; trying the next model.", file=sys.stderr)
+    else:
+        text = ""
+
+    if last_error is not None and not text:
+        print(f"ERROR: Gemini generation failed: {last_error}", file=sys.stderr)
+        sys.exit(1)
 
     # Strip accidental ```markdown fences if the model wraps the whole thing
     if text.startswith("```"):
@@ -222,12 +268,14 @@ def update_readme(topic: dict) -> None:
         if cells[0] != day_str:
             continue
 
-        # Only touch rows that are still pending ("[ ]")
-        if "[ ]" not in cells[-1]:
-            continue
-
         # Columns: Day | Topic | Video Link | Notes | Status
         topic_cell = f"[{topic['title']}]({relative_link})"
+        if cells[1] == topic_cell and "[x]" in cells[-1]:
+            updated = True
+            break
+
+        # Reconcile completed rows too: topics.json can be replaced with a
+        # different playlist while README.md still contains the old topic.
         cells[1] = topic_cell
         cells[-1] = cells[-1].replace("[ ]", "[x]")
 
