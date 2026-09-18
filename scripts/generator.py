@@ -50,7 +50,7 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 # Markers that must exist in README.md so we know where to look for the
 # progress table. See README.md for the actual table.
