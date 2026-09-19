@@ -20,7 +20,7 @@ file, it exits cleanly without calling the API.
 
 Environment variables (see .env.example):
     GEMINI_API_KEY   - required, your Gemini API key
-    GEMINI_MODEL     - optional, defaults to "gemini-2.5-flash"
+    GEMINI_MODEL     - optional, defaults to "gemini-3.6-flash"
     GEMINI_FALLBACK_MODELS
                      - optional comma-separated fallback model names
 """
@@ -53,9 +53,9 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-# Keep this default to a publicly released model.  A non-existent default model
-# makes the scheduled workflow fail before it can publish anything.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# Use the model currently available to new Gemini API users.  The workflow can
+# still be pinned to a different model with GEMINI_MODEL when needed.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 GEMINI_FALLBACK_MODELS = tuple(
     model.strip()
     for model in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",")
@@ -202,11 +202,10 @@ def call_gemini(prompt: str) -> str:
     for model in models:
         for attempt in range(GEMINI_MAX_RETRIES + 1):
             try:
-                response = client.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                    config=config,
-                )
+                # Gemini recommends sending requests through Chat when
+                # automatic function calling is enabled by the SDK.
+                chat = client.chats.create(model=model, config=config)
+                response = chat.send_message(prompt)
                 text = (getattr(response, "text", None) or "").strip()
                 last_error = None
                 break
