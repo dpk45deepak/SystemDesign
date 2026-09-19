@@ -67,7 +67,7 @@ system-design-in-hinglish/
    ```bash
    cp .env.example .env
    # then edit .env and add your GEMINI_API_KEY
-   export $(cat .env | xargs)   # or use a tool like direnv / python-dotenv
+   set -a; source .env; set +a  # or use a tool like direnv / python-dotenv
    ```
 
    Get a free Gemini API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
