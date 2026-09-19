@@ -21,6 +21,8 @@ file, it exits cleanly without calling the API.
 Environment variables (see .env.example):
     GEMINI_API_KEY   - required, your Gemini API key
     GEMINI_MODEL     - optional, defaults to "gemini-2.5-flash"
+    GEMINI_FALLBACK_MODELS
+                     - optional comma-separated fallback model names
 """
 
 from __future__ import annotations
@@ -51,10 +53,12 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+# Keep this default to a publicly released model.  A non-existent default model
+# makes the scheduled workflow fail before it can publish anything.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_FALLBACK_MODELS = tuple(
     model.strip()
-    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "gemini-3.6-flash").split(",")
+    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",")
     if model.strip()
 )
 GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
@@ -85,8 +89,26 @@ def load_topics() -> list[dict]:
         print("ERROR: topics.json is empty or malformed.", file=sys.stderr)
         sys.exit(1)
 
-    # Keep them in day order regardless of how they're stored on disk
+    required_fields = {"day", "slug", "title", "video_url"}
+    for index, topic in enumerate(topics, start=1):
+        if not isinstance(topic, dict) or required_fields - topic.keys():
+            missing = required_fields - topic.keys() if isinstance(topic, dict) else required_fields
+            print(
+                f"ERROR: topics.json entry {index} is malformed; missing: "
+                f"{', '.join(sorted(missing))}.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if not isinstance(topic["day"], int) or topic["day"] < 1:
+            print(f"ERROR: topics.json entry {index} has an invalid day.", file=sys.stderr)
+            sys.exit(1)
+
+    # Keep them in day order regardless of how they're stored on disk.
     topics.sort(key=lambda t: t["day"])
+    days = [topic["day"] for topic in topics]
+    if len(days) != len(set(days)):
+        print("ERROR: topics.json contains duplicate day values.", file=sys.stderr)
+        sys.exit(1)
     return topics
 
 
@@ -180,14 +202,17 @@ def call_gemini(prompt: str) -> str:
     for model in models:
         for attempt in range(GEMINI_MAX_RETRIES + 1):
             try:
-                chat = client.chats.create(model=model, config=config)
-                response = chat.send_message(prompt)
-                text = (response.text or "").strip()
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=config,
+                )
+                text = (getattr(response, "text", None) or "").strip()
                 last_error = None
                 break
             except Exception as exc:
                 last_error = exc
-                status_code = getattr(exc, "status_code", None)
+                status_code = getattr(exc, "status_code", getattr(exc, "code", None))
                 is_transient = status_code in TRANSIENT_STATUS_CODES
                 if not is_transient or attempt >= GEMINI_MAX_RETRIES:
                     break
@@ -205,7 +230,7 @@ def call_gemini(prompt: str) -> str:
         if last_error is None:
             break
 
-        status_code = getattr(last_error, "status_code", None)
+        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
         if status_code not in FALLBACK_STATUS_CODES:
             break
         print(f"Gemini model {model} failed; trying the next model.", file=sys.stderr)
