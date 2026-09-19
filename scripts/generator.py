@@ -65,12 +65,17 @@ GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
 GEMINI_RETRY_DELAY_SECONDS = float(os.environ.get("GEMINI_RETRY_DELAY_SECONDS", "2"))
 TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
 FALLBACK_STATUS_CODES = TRANSIENT_STATUS_CODES | {404}
+ACCESS_ERROR_STATUS_CODES = {401, 403}
 
 # Markers that must exist in README.md so we know where to look for the
 # progress table. See README.md for the actual table.
 README_TABLE_ROW_PATTERN = re.compile(
     r"^\|\s*{day}\s*\|(?P<rest>.*)\|\s*\[\s\]\s*\|\s*$"
 )
+
+
+class GeminiAccessError(RuntimeError):
+    """Raised when the configured API key or Google Cloud project is unavailable."""
 
 
 # --------------------------------------------------------------------------
@@ -237,6 +242,9 @@ def call_gemini(prompt: str) -> str:
         text = ""
 
     if last_error is not None and not text:
+        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
+        if status_code in ACCESS_ERROR_STATUS_CODES:
+            raise GeminiAccessError(str(last_error)) from last_error
         print(f"ERROR: Gemini generation failed: {last_error}", file=sys.stderr)
         sys.exit(1)
 
@@ -335,7 +343,19 @@ def main() -> None:
 
     prompt = build_prompt(next_topic)
     print("Calling Gemini API...")
-    content = call_gemini(prompt)
+    try:
+        content = call_gemini(prompt)
+    except GeminiAccessError as exc:
+        # A denied or invalid project cannot be fixed by retries or by a
+        # different model.  Keep the scheduled workflow green and leave the
+        # topic pending so it can be generated once access is restored.
+        print(
+            "WARNING: Gemini API access was denied; no guide was generated. "
+            "Verify GEMINI_API_KEY and the Google Cloud project's Gemini access. "
+            f"Details: {exc}",
+            file=sys.stderr,
+        )
+        return
 
     write_topic_file(next_topic, content)
     update_readme(next_topic)
