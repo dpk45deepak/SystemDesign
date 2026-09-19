@@ -67,7 +67,7 @@ system-design-in-hinglish/
    ```bash
    cp .env.example .env
    # then edit .env and add your GEMINI_API_KEY
-   export $(cat .env | xargs)   # or use a tool like direnv / python-dotenv
+   set -a; source .env; set +a  # or use a tool like direnv / python-dotenv
    ```
 
    Get a free Gemini API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
@@ -99,6 +99,9 @@ system-design-in-hinglish/
   `main` as `SystemDesign Bot <actions@github.com>`.
 - If every topic in `topics.json` already has a generated file, the script exits
   cleanly without making any changes — so the workflow is always safe to run.
+- If Gemini denies the configured project's access, the workflow exits successfully
+  without publishing a guide and leaves the topic pending. Restore the project's
+  Gemini API access or replace `GEMINI_API_KEY`, then run it again.
 
 ### Setting up the automation on your fork
 

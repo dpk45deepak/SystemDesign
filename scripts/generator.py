@@ -20,7 +20,9 @@ file, it exits cleanly without calling the API.
 
 Environment variables (see .env.example):
     GEMINI_API_KEY   - required, your Gemini API key
-    GEMINI_MODEL     - optional, defaults to "gemini-2.5-flash"
+    GEMINI_MODEL     - optional, defaults to "gemini-3.6-flash"
+    GEMINI_FALLBACK_MODELS
+                     - optional comma-separated fallback model names
 """
 
 from __future__ import annotations
@@ -51,22 +53,29 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
+# Use the model currently available to new Gemini API users.  The workflow can
+# still be pinned to a different model with GEMINI_MODEL when needed.
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 GEMINI_FALLBACK_MODELS = tuple(
     model.strip()
-    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "gemini-3.6-flash").split(",")
+    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",")
     if model.strip()
 )
 GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
 GEMINI_RETRY_DELAY_SECONDS = float(os.environ.get("GEMINI_RETRY_DELAY_SECONDS", "2"))
 TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
 FALLBACK_STATUS_CODES = TRANSIENT_STATUS_CODES | {404}
+ACCESS_ERROR_STATUS_CODES = {401, 403}
 
 # Markers that must exist in README.md so we know where to look for the
 # progress table. See README.md for the actual table.
 README_TABLE_ROW_PATTERN = re.compile(
     r"^\|\s*{day}\s*\|(?P<rest>.*)\|\s*\[\s\]\s*\|\s*$"
 )
+
+
+class GeminiAccessError(RuntimeError):
+    """Raised when the configured API key or Google Cloud project is unavailable."""
 
 
 # --------------------------------------------------------------------------
@@ -85,8 +94,26 @@ def load_topics() -> list[dict]:
         print("ERROR: topics.json is empty or malformed.", file=sys.stderr)
         sys.exit(1)
 
-    # Keep them in day order regardless of how they're stored on disk
+    required_fields = {"day", "slug", "title", "video_url"}
+    for index, topic in enumerate(topics, start=1):
+        if not isinstance(topic, dict) or required_fields - topic.keys():
+            missing = required_fields - topic.keys() if isinstance(topic, dict) else required_fields
+            print(
+                f"ERROR: topics.json entry {index} is malformed; missing: "
+                f"{', '.join(sorted(missing))}.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if not isinstance(topic["day"], int) or topic["day"] < 1:
+            print(f"ERROR: topics.json entry {index} has an invalid day.", file=sys.stderr)
+            sys.exit(1)
+
+    # Keep them in day order regardless of how they're stored on disk.
     topics.sort(key=lambda t: t["day"])
+    days = [topic["day"] for topic in topics]
+    if len(days) != len(set(days)):
+        print("ERROR: topics.json contains duplicate day values.", file=sys.stderr)
+        sys.exit(1)
     return topics
 
 
@@ -180,14 +207,16 @@ def call_gemini(prompt: str) -> str:
     for model in models:
         for attempt in range(GEMINI_MAX_RETRIES + 1):
             try:
+                # Gemini recommends sending requests through Chat when
+                # automatic function calling is enabled by the SDK.
                 chat = client.chats.create(model=model, config=config)
                 response = chat.send_message(prompt)
-                text = (response.text or "").strip()
+                text = (getattr(response, "text", None) or "").strip()
                 last_error = None
                 break
             except Exception as exc:
                 last_error = exc
-                status_code = getattr(exc, "status_code", None)
+                status_code = getattr(exc, "status_code", getattr(exc, "code", None))
                 is_transient = status_code in TRANSIENT_STATUS_CODES
                 if not is_transient or attempt >= GEMINI_MAX_RETRIES:
                     break
@@ -205,7 +234,7 @@ def call_gemini(prompt: str) -> str:
         if last_error is None:
             break
 
-        status_code = getattr(last_error, "status_code", None)
+        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
         if status_code not in FALLBACK_STATUS_CODES:
             break
         print(f"Gemini model {model} failed; trying the next model.", file=sys.stderr)
@@ -213,6 +242,9 @@ def call_gemini(prompt: str) -> str:
         text = ""
 
     if last_error is not None and not text:
+        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
+        if status_code in ACCESS_ERROR_STATUS_CODES:
+            raise GeminiAccessError(str(last_error)) from last_error
         print(f"ERROR: Gemini generation failed: {last_error}", file=sys.stderr)
         sys.exit(1)
 
@@ -311,7 +343,19 @@ def main() -> None:
 
     prompt = build_prompt(next_topic)
     print("Calling Gemini API...")
-    content = call_gemini(prompt)
+    try:
+        content = call_gemini(prompt)
+    except GeminiAccessError as exc:
+        # A denied or invalid project cannot be fixed by retries or by a
+        # different model.  Keep the scheduled workflow green and leave the
+        # topic pending so it can be generated once access is restored.
+        print(
+            "WARNING: Gemini API access was denied; no guide was generated. "
+            "Verify GEMINI_API_KEY and the Google Cloud project's Gemini access. "
+            f"Details: {exc}",
+            file=sys.stderr,
+        )
+        return
 
     write_topic_file(next_topic, content)
     update_readme(next_topic)
