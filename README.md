@@ -24,7 +24,7 @@ System Design notebook bana lo.
 
 | Day | Topic | Video Link | Notes | Status |
 |-----|-------|------------|-------|--------|
-| 1 | [Vertical vs Horizontal Scaling](topics/day-01-vertical-vs-horizontal-scaling.md) | [Watch](https://www.youtube.com/watch?v=xpDnVSmNFX0) | Sample guide, included out of the box | [x] |
+| 1 | [How to Design APIs Like a Senior Engineer (REST, GraphQL, Auth, Security)](topics/day-01-how-to-design-apis-like-a-senior-engineer-rest-graphql-auth-security.md) | [Watch](https://www.youtube.com/watch?v=xpDnVSmNFX0) | Sample guide, included out of the box | [x] |
 | 2 | Load Balancers | [Watch](https://www.youtube.com/watch?v=K0Ta65OqQkY) | | [ ] |
 | 3 | Caching Strategies | [Watch](https://www.youtube.com/watch?v=U3RkDLtS7uY) | | [ ] |
 | 4 | Database Indexing | [Watch](https://www.youtube.com/watch?v=fsG1XaZEa78) | | [ ] |
