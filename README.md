@@ -26,7 +26,7 @@ System Design notebook bana lo.
 |-----|-------|------------|-------|--------|
 | 1 | [How to Design APIs Like a Senior Engineer (REST, GraphQL, Auth, Security)](topics/day-01-how-to-design-apis-like-a-senior-engineer-rest-graphql-auth-security.md) | [Watch](https://www.youtube.com/watch?v=xpDnVSmNFX0) | Sample guide, included out of the box | [x] |
 | 2 | [API Security Explained: Rate Limiting, CORS, SQL Injection, CSRF, XSS & More](topics/day-02-api-security-explained-rate-limiting-cors-sql-injection-csrf-xss-more.md) | [Watch](https://www.youtube.com/watch?v=K0Ta65OqQkY) |  | [x] |
-| 3 | Caching Strategies | [Watch](https://www.youtube.com/watch?v=U3RkDLtS7uY) | | [ ] |
+| 3 | [Authentication Explained: When to Use Basic, Bearer, OAuth2, JWT & SSO](topics/day-03-authentication-explained-when-to-use-basic-bearer-oauth2-jwt-sso.md) | [Watch](https://www.youtube.com/watch?v=U3RkDLtS7uY) |  | [x] |
 | 4 | Database Indexing | [Watch](https://www.youtube.com/watch?v=fsG1XaZEa78) | | [ ] |
 | 5 | Database Sharding | [Watch](https://www.youtube.com/watch?v=v3Ehy1O0edA) | | [ ] |
 | 6 | Consistent Hashing | [Watch](https://www.youtube.com/watch?v=zaRkONvyGr8) | | [ ] |
