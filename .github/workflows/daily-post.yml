@@ -35,7 +35,7 @@ jobs:
       - name: Run daily generator
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          XAI_MODEL: ${{ vars.XAI_MODEL || 'grok-4.7' }}
+          XAI_MODEL: ${{ vars.XAI_MODEL || 'openai/gpt-oss-20b' }}
         run: python scripts/generator.py
 
       - name: Commit and push new content
