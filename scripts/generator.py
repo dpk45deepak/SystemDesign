@@ -34,14 +34,6 @@ import time
 import requests
 from pathlib import Path
 
-try:
-    from openai import OpenAI
-except ImportError:
-    print(
-        "ERROR: openai is not installed. Run `pip install -r requirements.txt` first.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
 
 # --------------------------------------------------------------------------
 # Paths / config
@@ -180,10 +172,9 @@ def call_grok(prompt: str) -> str:
         print("ERROR: GROQ_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    client = requests
     last_error: Exception | None = None
 
-    for attempt in range(GROQ_MAX_RETRIES + 1):
+    for attempt in range(1, GROQ_MAX_RETRIES + 1):
         try:
             response = requests.post(
                 GROQ_API_URL,
@@ -200,30 +191,36 @@ def call_grok(prompt: str) -> str:
                 timeout=180,
             )
 
-            text = (response.json()["choices"][0]["message"]["content"] or "").strip()
-            if not text:
-                print("ERROR: Grok returned an empty response.", file=sys.stderr)
-                sys.exit(1)
+            if response.ok:
+                data = response.json()
+                text = (data["choices"][0]["message"]["content"] or "").strip()
+                if not text:
+                    raise RuntimeError("Groq returned an empty response.")
+                if text.startswith("```"):
+                    text = re.sub(r"^```(?:markdown)?\\s*", "", text)
+                    text = re.sub(r"\\s*```$", "", text)
+                return text
 
-            if text.startswith("```"):
-                text = re.sub(r"^```(?:markdown)?\\s*", "", text)
-                text = re.sub(r"\\s*```$", "", text)
-            return text
-
-        except Exception as exc:
-            last_error = exc
-            status_code = getattr(exc, "status_code", None)
+            status_code = response.status_code
             if status_code not in TRANSIENT_STATUS_CODES or attempt >= GROQ_MAX_RETRIES:
-                break
+                raise RuntimeError(f"Groq API failed ({status_code}): {response.text[:1500]}")
 
-            delay = 2 ** attempt
-            print(
-                f"Grok request returned {status_code}; retrying in {delay:g}s ({attempt + 1}/{GROQ_MAX_RETRIES})...",
-                file=sys.stderr,
-            )
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt >= GROQ_MAX_RETRIES:
+                break
+            delay = min(60, 2 ** (attempt - 1))
+            print(f"Groq network error: {exc}; retrying in {delay}s ({attempt}/{GROQ_MAX_RETRIES})...", file=sys.stderr)
+            time.sleep(delay)
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            last_error = exc
+            if attempt >= GROQ_MAX_RETRIES:
+                break
+            delay = min(60, 2 ** (attempt - 1))
+            print(f"Groq response parsing error; retrying in {delay}s ({attempt}/{GROQ_MAX_RETRIES})...", file=sys.stderr)
             time.sleep(delay)
 
-    print(f"ERROR: Grok generation failed: {last_error}", file=sys.stderr)
+    print(f"ERROR: Groq generation failed: {last_error}", file=sys.stderr)
     sys.exit(1)
 
 # --------------------------------------------------------------------------
