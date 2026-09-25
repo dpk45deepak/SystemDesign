@@ -7,33 +7,6 @@
 
 > Har din ek naya System Design concept — seedhe, apne andaaz mein. Bina jargon ke bojh ke.
 
-## 🤔 Why this repo exists
-
-Zyaadatar System Design content ya to bahut academic hai, ya phir itna dry hai ki
-interview ke 2 din pehle yaad hi nahi rehta. Yeh repo ek fully automated engine hai
-jo **roz ek naya System Design guide** generate karta hai — Swiggy, IRCTC, Zerodha
-jaise Indian products ke relatable examples ke saath, clean Mermaid diagrams ke
-saath, aur ek crisp interview cheat-sheet ke saath.
-
-Koi manual likhne ka jhanjhat nahi. Ek GitHub Actions workflow roz subah 9 AM IST
-pe chalta hai, agla topic uthata hai, Groq se guide banata hai, aur khud commit
-kar deta hai. Fork karo, apna playlist daalo, aur apna khud ka daily-updating
-System Design notebook bana lo.
-
-## 📚 Progress Tracker
-
-| Day | Topic | Video Link | Notes | Status |
-|-----|-------|------------|-------|--------|
-| 1 | [How to Design APIs Like a Senior Engineer (REST, GraphQL, Auth, Security)](topics/day-01-how-to-design-apis-like-a-senior-engineer-rest-graphql-auth-security.md) | [Watch](https://www.youtube.com/watch?v=xpDnVSmNFX0) | Sample guide, included out of the box | [x] |
-| 2 | [API Security Explained: Rate Limiting, CORS, SQL Injection, CSRF, XSS & More](topics/day-02-api-security-explained-rate-limiting-cors-sql-injection-csrf-xss-more.md) | [Watch](https://www.youtube.com/watch?v=K0Ta65OqQkY) |  | [x] |
-| 3 | [Authentication Explained: When to Use Basic, Bearer, OAuth2, JWT & SSO](topics/day-03-authentication-explained-when-to-use-basic-bearer-oauth2-jwt-sso.md) | [Watch](https://www.youtube.com/watch?v=U3RkDLtS7uY) |  | [x] |
-| 4 | [7 Authentication Concepts Every Developer Should Know](topics/day-04-7-authentication-concepts-every-developer-should-know.md) | [Watch](https://www.youtube.com/watch?v=fsG1XaZEa78) |  | [x] |
-| 5 | Database Sharding | [Watch](https://www.youtube.com/watch?v=v3Ehy1O0edA) | | [ ] |
-| 6 | Consistent Hashing | [Watch](https://www.youtube.com/watch?v=zaRkONvyGr8) | | [ ] |
-| 7 | CAP Theorem | [Watch](https://www.youtube.com/watch?v=BHqjEjzAicA) | | [ ] |
-
-*This table is auto-updated by `scripts/generator.py` every time a new guide is published — the "Topic" cell becomes a link to the generated markdown file and the status flips to `[x]`.*
-
 ## 🗂️ Repository Structure
 
 ```
@@ -51,80 +24,6 @@ system-design-in-hinglish/
 ├── requirements.txt
 └── .env.example
 ```
-
-## 🚀 Running it locally
-
-1. **Clone and install dependencies**
-
-   ```bash
-   git clone https://github.com/<your-username>/system-design-in-hinglish.git
-   cd system-design-in-hinglish
-   pip install -r requirements.txt
-   ```
-
-2. **Set up your API key**
-
-   ```bash
-   cp .env.example .env
-   # then edit .env and add your GROQ_API_KEY
-   set -a; source .env; set +a  # or use a tool like direnv / python-dotenv
-   ```
-
-   Create an API key in the [Groq Console](https://console.x.ai/).
-
-3. **(Optional) Seed your own topic list from a YouTube playlist**
-
-   ```bash
-   python scripts/extract_playlist.py "https://www.youtube.com/playlist?list=YOUR_PLAYLIST_ID"
-   ```
-
-   This overwrites `scripts/topics.json` with your playlist's videos, in order
-   (a backup of the previous file is saved as `scripts/topics.json.bak`).
-
-4. **Generate the next guide manually**
-
-   ```bash
-   python scripts/generator.py
-   ```
-
-   This finds the next topic without a markdown file, calls Groq, writes
-   `topics/{slug}.md`, and updates the progress table in this README.
-
-## 🤖 How the automation works
-
-- `.github/workflows/daily-post.yml` runs every day at **3:30 AM UTC (9:00 AM IST)**,
-  and can also be triggered manually from the **Actions** tab (`workflow_dispatch`).
-- It installs dependencies, runs `scripts/generator.py` (using the `GROQ_API_KEY`
-  repository secret), and if a new file was generated, commits and pushes it to
-  `main` as `SystemDesign Bot <actions@github.com>`.
-- If every topic in `topics.json` already has a generated file, the script exits
-  cleanly without making any changes — so the workflow is always safe to run.
-- If Groq denies the configured API access, the workflow exits successfully
-  without publishing a guide and leaves the topic pending. Restore the project's
-  Groq API access or replace `GROQ_API_KEY`, then run it again.
-
-### Setting up the automation on your fork
-
-1. Go to **Settings → Secrets and variables → Actions** on your fork.
-2. Add a new repository secret named `GROQ_API_KEY` with your Groq API key.
-3. That's it — the workflow will start running on the daily schedule, or you can
-   trigger it immediately from **Actions → Daily System Design Post → Run workflow**.
-
-## 🙌 Contributing
-
-Contributions are welcome!
-
-- **Add more topics**: open a PR adding entries to `scripts/topics.json`
-  (or extend it via `extract_playlist.py` with a new playlist).
-- **Improve the prompt**: tweak `build_prompt()` in `scripts/generator.py` to
-  improve tone, structure, or add new sections.
-- **Fix a generated guide**: generated markdown files in `topics/` are plain
-  Markdown — feel free to open a PR editing them directly for accuracy or
-  clarity.
-- **Report issues**: found a broken diagram or a factual error? Open an issue.
-
-Fork the repo, make your changes, and submit a pull request. Please keep the
-Hinglish tone consistent with the existing guides.
 
 ## 📄 License
 
