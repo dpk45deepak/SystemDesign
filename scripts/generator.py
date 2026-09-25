@@ -8,7 +8,7 @@ What it does, in order:
   1. Loads scripts/topics.json (the ordered topic index).
   2. Finds the first topic whose markdown file does not yet exist inside
      topics/.
-  3. Calls the Grok API through xAI's OpenAI-compatible API with a strict formatting
+  3. Calls the Groq API with a strict formatting
      prompt to generate a high-retention, Hinglish system design guide.
   4. Writes the result to topics/{slug}.md.
   5. Parses README.md and flips that topic's row in the progress tracker
@@ -19,8 +19,8 @@ is fully safe to run manually / repeatedly: if every topic already has a
 file, it exits cleanly without calling the API.
 
 Environment variables (see .env.example):
-    XAI_API_KEY   - required, your Grok API key
-    XAI_MODEL     - optional, defaults to "grok-4.7"
+    GROQ_API_KEY   - required, your Groq API key
+    GROQ_MODEL     - optional, defaults to "openai/gpt-oss-20b"
 """
 
 from __future__ import annotations
@@ -30,6 +30,8 @@ import os
 import re
 import sys
 import time
+
+import requests
 from pathlib import Path
 
 try:
@@ -50,9 +52,9 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4.7")
-XAI_BASE_URL = os.environ.get("XAI_BASE_URL", "https://api.x.ai/v1")
-XAI_MAX_RETRIES = int(os.environ.get("XAI_MAX_RETRIES", "3"))
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MAX_RETRIES = int(os.environ.get("GROQ_MAX_RETRIES", "3"))
 TRANSIENT_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
 
 # Markers that must exist in README.md so we know where to look for the
@@ -173,24 +175,32 @@ Ab upar diye gaye structure ko EXACTLY follow karte hue pura guide likho.
 
 
 def call_grok(prompt: str) -> str:
-    api_key = os.environ.get("XAI_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        print("ERROR: XAI_API_KEY environment variable is not set.", file=sys.stderr)
+        print("ERROR: GROQ_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    client = OpenAI(api_key=api_key, base_url=XAI_BASE_URL)
+    client = requests
     last_error: Exception | None = None
 
-    for attempt in range(XAI_MAX_RETRIES + 1):
+    for attempt in range(GROQ_MAX_RETRIES + 1):
         try:
-            response = client.chat.completions.create(
-                model=XAI_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.8,
-                max_tokens=8192,
+            response = requests.post(
+                GROQ_API_URL,
+                json={
+                    "model": GROQ_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.8,
+                    "max_tokens": 8192,
+                },
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=180,
             )
 
-            text = (response.choices[0].message.content or "").strip()
+            text = (response.json()["choices"][0]["message"]["content"] or "").strip()
             if not text:
                 print("ERROR: Grok returned an empty response.", file=sys.stderr)
                 sys.exit(1)
@@ -202,13 +212,13 @@ def call_grok(prompt: str) -> str:
 
         except Exception as exc:
             last_error = exc
-            status_code = getattr(exc, "status_code", getattr(exc, "code", None))
-            if status_code not in TRANSIENT_STATUS_CODES or attempt >= XAI_MAX_RETRIES:
+            status_code = getattr(exc, "status_code", None)
+            if status_code not in TRANSIENT_STATUS_CODES or attempt >= GROQ_MAX_RETRIES:
                 break
 
             delay = 2 ** attempt
             print(
-                f"Grok request returned {status_code}; retrying in {delay:g}s ({attempt + 1}/{XAI_MAX_RETRIES})...",
+                f"Grok request returned {status_code}; retrying in {delay:g}s ({attempt + 1}/{GROQ_MAX_RETRIES})...",
                 file=sys.stderr,
             )
             time.sleep(delay)
@@ -298,7 +308,7 @@ def main() -> None:
     print(f"Next topic: day {next_topic['day']:02d} - {next_topic['title']}")
 
     prompt = build_prompt(next_topic)
-    print("Calling Grok API...")
+    print("Calling Groq API...")
     content = call_grok(prompt)
 
     write_topic_file(next_topic, content)
