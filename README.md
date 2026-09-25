@@ -16,7 +16,7 @@ jaise Indian products ke relatable examples ke saath, clean Mermaid diagrams ke
 saath, aur ek crisp interview cheat-sheet ke saath.
 
 Koi manual likhne ka jhanjhat nahi. Ek GitHub Actions workflow roz subah 9 AM IST
-pe chalta hai, agla topic uthata hai, Grok se guide banata hai, aur khud commit
+pe chalta hai, agla topic uthata hai, Groq se guide banata hai, aur khud commit
 kar deta hai. Fork karo, apna playlist daalo, aur apna khud ka daily-updating
 System Design notebook bana lo.
 
@@ -43,7 +43,7 @@ system-design-in-hinglish/
 │       └── daily-post.yml          # Daily cron job: generates + commits + pushes
 ├── scripts/
 │   ├── extract_playlist.py         # One-off: YouTube playlist -> topics.json
-│   ├── generator.py                # Main engine: Grok call + file write + README update
+│   ├── generator.py                # Main engine: Groq call + file write + README update
 │   └── topics.json                 # Ordered index of all topics/videos
 ├── topics/                         # Generated daily markdown guides land here
 │   └── day-01-vertical-vs-horizontal-scaling.md
@@ -66,11 +66,11 @@ system-design-in-hinglish/
 
    ```bash
    cp .env.example .env
-   # then edit .env and add your XAI_API_KEY
+   # then edit .env and add your GROQ_API_KEY
    set -a; source .env; set +a  # or use a tool like direnv / python-dotenv
    ```
 
-   Create an API key in the [xAI Console](https://console.x.ai/).
+   Create an API key in the [Groq Console](https://console.x.ai/).
 
 3. **(Optional) Seed your own topic list from a YouTube playlist**
 
@@ -87,26 +87,26 @@ system-design-in-hinglish/
    python scripts/generator.py
    ```
 
-   This finds the next topic without a markdown file, calls Grok, writes
+   This finds the next topic without a markdown file, calls Groq, writes
    `topics/{slug}.md`, and updates the progress table in this README.
 
 ## 🤖 How the automation works
 
 - `.github/workflows/daily-post.yml` runs every day at **3:30 AM UTC (9:00 AM IST)**,
   and can also be triggered manually from the **Actions** tab (`workflow_dispatch`).
-- It installs dependencies, runs `scripts/generator.py` (using the `XAI_API_KEY`
+- It installs dependencies, runs `scripts/generator.py` (using the `GROQ_API_KEY`
   repository secret), and if a new file was generated, commits and pushes it to
   `main` as `SystemDesign Bot <actions@github.com>`.
 - If every topic in `topics.json` already has a generated file, the script exits
   cleanly without making any changes — so the workflow is always safe to run.
-- If xAI denies the configured API access, the workflow exits successfully
+- If Groq denies the configured API access, the workflow exits successfully
   without publishing a guide and leaves the topic pending. Restore the project's
-  Grok API access or replace `XAI_API_KEY`, then run it again.
+  Groq API access or replace `GROQ_API_KEY`, then run it again.
 
 ### Setting up the automation on your fork
 
 1. Go to **Settings → Secrets and variables → Actions** on your fork.
-2. Add a new repository secret named `XAI_API_KEY` with your Grok API key.
+2. Add a new repository secret named `GROQ_API_KEY` with your Groq API key.
 3. That's it — the workflow will start running on the daily schedule, or you can
    trigger it immediately from **Actions → Daily System Design Post → Run workflow**.
 
