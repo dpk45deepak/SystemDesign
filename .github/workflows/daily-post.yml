@@ -34,7 +34,8 @@ jobs:
 
       - name: Run daily generator
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          XAI_MODEL: ${{ vars.XAI_MODEL || 'grok-4.7' }}
         run: python scripts/generator.py
 
       - name: Commit and push new content
