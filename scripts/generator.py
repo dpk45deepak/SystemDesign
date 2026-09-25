@@ -8,7 +8,7 @@ What it does, in order:
   1. Loads scripts/topics.json (the ordered topic index).
   2. Finds the first topic whose markdown file does not yet exist inside
      topics/.
-  3. Calls the Grok API (via google-genai) with a strict formatting
+  3. Calls the Grok API through xAI's OpenAI-compatible API with a strict formatting
      prompt to generate a high-retention, Hinglish system design guide.
   4. Writes the result to topics/{slug}.md.
   5. Parses README.md and flips that topic's row in the progress tracker
@@ -20,9 +20,7 @@ file, it exits cleanly without calling the API.
 
 Environment variables (see .env.example):
     XAI_API_KEY   - required, your Grok API key
-    XAI_MODEL     - optional, defaults to "gemini-3.6-flash"
-    XAI_FALLBACK_MODELS
-                     - optional comma-separated fallback model names
+    XAI_MODEL     - optional, defaults to "grok-4.7"
 """
 
 from __future__ import annotations
@@ -62,10 +60,6 @@ TRANSIENT_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
 README_TABLE_ROW_PATTERN = re.compile(
     r"^\|\s*{day}\s*\|(?P<rest>.*)\|\s*\[\s\]\s*\|\s*$"
 )
-
-
-class GrokAccessError(RuntimeError):
-    """Raised when the configured API key or Google Cloud project is unavailable."""
 
 
 # --------------------------------------------------------------------------
@@ -305,19 +299,7 @@ def main() -> None:
 
     prompt = build_prompt(next_topic)
     print("Calling Grok API...")
-    try:
-        content = call_grok(prompt)
-    except GrokAccessError as exc:
-        # A denied or invalid project cannot be fixed by retries or by a
-        # different model.  Keep the scheduled workflow green and leave the
-        # topic pending so it can be generated once access is restored.
-        print(
-            "WARNING: Grok API access was denied; no guide was generated. "
-            "Verify XAI_API_KEY and the Google Cloud project's Grok access. "
-            f"Details: {exc}",
-            file=sys.stderr,
-        )
-        return
+    content = call_grok(prompt)
 
     write_topic_file(next_topic, content)
     update_readme(next_topic)
