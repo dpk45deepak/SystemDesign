@@ -8,7 +8,7 @@ What it does, in order:
   1. Loads scripts/topics.json (the ordered topic index).
   2. Finds the first topic whose markdown file does not yet exist inside
      topics/.
-  3. Calls the Gemini API (via google-genai) with a strict formatting
+  3. Calls the Grok API (via google-genai) with a strict formatting
      prompt to generate a high-retention, Hinglish system design guide.
   4. Writes the result to topics/{slug}.md.
   5. Parses README.md and flips that topic's row in the progress tracker
@@ -19,9 +19,9 @@ is fully safe to run manually / repeatedly: if every topic already has a
 file, it exits cleanly without calling the API.
 
 Environment variables (see .env.example):
-    GEMINI_API_KEY   - required, your Gemini API key
-    GEMINI_MODEL     - optional, defaults to "gemini-3.6-flash"
-    GEMINI_FALLBACK_MODELS
+    XAI_API_KEY   - required, your Grok API key
+    XAI_MODEL     - optional, defaults to "gemini-3.6-flash"
+    XAI_FALLBACK_MODELS
                      - optional comma-separated fallback model names
 """
 
@@ -35,11 +35,10 @@ import time
 from pathlib import Path
 
 try:
-    from google import genai
-    from google.genai import types as genai_types
+    from openai import OpenAI
 except ImportError:
     print(
-        "ERROR: google-genai is not installed. Run `pip install -r requirements.txt` first.",
+        "ERROR: openai is not installed. Run `pip install -r requirements.txt` first.",
         file=sys.stderr,
     )
     sys.exit(1)
@@ -53,19 +52,10 @@ TOPICS_JSON_PATH = Path(os.environ.get("TOPICS_JSON_PATH", REPO_ROOT / "scripts"
 TOPICS_OUTPUT_DIR = Path(os.environ.get("TOPICS_OUTPUT_DIR", REPO_ROOT / "topics"))
 README_PATH = Path(os.environ.get("README_PATH", REPO_ROOT / "README.md"))
 
-# Use the model currently available to new Gemini API users.  The workflow can
-# still be pinned to a different model with GEMINI_MODEL when needed.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
-GEMINI_FALLBACK_MODELS = tuple(
-    model.strip()
-    for model in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",")
-    if model.strip()
-)
-GEMINI_MAX_RETRIES = int(os.environ.get("GEMINI_MAX_RETRIES", "3"))
-GEMINI_RETRY_DELAY_SECONDS = float(os.environ.get("GEMINI_RETRY_DELAY_SECONDS", "2"))
-TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
-FALLBACK_STATUS_CODES = TRANSIENT_STATUS_CODES | {404}
-ACCESS_ERROR_STATUS_CODES = {401, 403}
+XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4.7")
+XAI_BASE_URL = os.environ.get("XAI_BASE_URL", "https://api.x.ai/v1")
+XAI_MAX_RETRIES = int(os.environ.get("XAI_MAX_RETRIES", "3"))
+TRANSIENT_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
 
 # Markers that must exist in README.md so we know where to look for the
 # progress table. See README.md for the actual table.
@@ -74,7 +64,7 @@ README_TABLE_ROW_PATTERN = re.compile(
 )
 
 
-class GeminiAccessError(RuntimeError):
+class GrokAccessError(RuntimeError):
     """Raised when the configured API key or Google Cloud project is unavailable."""
 
 
@@ -131,7 +121,7 @@ def find_next_topic(topics: list[dict]) -> dict | None:
 
 
 # --------------------------------------------------------------------------
-# Step 3: build the Gemini prompt and call the API
+# Step 3: build the Grok prompt and call the API
 # --------------------------------------------------------------------------
 
 def build_prompt(topic: dict) -> str:
@@ -188,77 +178,49 @@ Ab upar diye gaye structure ko EXACTLY follow karte hue pura guide likho.
 """
 
 
-def call_gemini(prompt: str) -> str:
-    api_key = os.environ.get("GEMINI_API_KEY")
+def call_grok(prompt: str) -> str:
+    api_key = os.environ.get("XAI_API_KEY")
     if not api_key:
-        print("ERROR: GEMINI_API_KEY environment variable is not set.", file=sys.stderr)
+        print("ERROR: XAI_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
-
-    models = tuple(dict.fromkeys((GEMINI_MODEL, *GEMINI_FALLBACK_MODELS)))
-    config = genai_types.GenerateContentConfig(
-        temperature=0.8,
-        max_output_tokens=8192,
-    )
+    client = OpenAI(api_key=api_key, base_url=XAI_BASE_URL)
     last_error: Exception | None = None
-    text = ""
 
-    for model in models:
-        for attempt in range(GEMINI_MAX_RETRIES + 1):
-            try:
-                # Gemini recommends sending requests through Chat when
-                # automatic function calling is enabled by the SDK.
-                chat = client.chats.create(model=model, config=config)
-                response = chat.send_message(prompt)
-                text = (getattr(response, "text", None) or "").strip()
-                last_error = None
+    for attempt in range(XAI_MAX_RETRIES + 1):
+        try:
+            response = client.chat.completions.create(
+                model=XAI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8,
+                max_tokens=8192,
+            )
+
+            text = (response.choices[0].message.content or "").strip()
+            if not text:
+                print("ERROR: Grok returned an empty response.", file=sys.stderr)
+                sys.exit(1)
+
+            if text.startswith("```"):
+                text = re.sub(r"^```(?:markdown)?\\s*", "", text)
+                text = re.sub(r"\\s*```$", "", text)
+            return text
+
+        except Exception as exc:
+            last_error = exc
+            status_code = getattr(exc, "status_code", getattr(exc, "code", None))
+            if status_code not in TRANSIENT_STATUS_CODES or attempt >= XAI_MAX_RETRIES:
                 break
-            except Exception as exc:
-                last_error = exc
-                status_code = getattr(exc, "status_code", getattr(exc, "code", None))
-                is_transient = status_code in TRANSIENT_STATUS_CODES
-                if not is_transient or attempt >= GEMINI_MAX_RETRIES:
-                    break
 
-                delay = GEMINI_RETRY_DELAY_SECONDS * (2**attempt)
-                print(
-                    f"Gemini model {model} returned {status_code}; "
-                    f"retrying in {delay:g}s ({attempt + 1}/{GEMINI_MAX_RETRIES})...",
-                    file=sys.stderr,
-                )
-                time.sleep(delay)
-        else:
-            continue
+            delay = 2 ** attempt
+            print(
+                f"Grok request returned {status_code}; retrying in {delay:g}s ({attempt + 1}/{XAI_MAX_RETRIES})...",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
 
-        if last_error is None:
-            break
-
-        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
-        if status_code not in FALLBACK_STATUS_CODES:
-            break
-        print(f"Gemini model {model} failed; trying the next model.", file=sys.stderr)
-    else:
-        text = ""
-
-    if last_error is not None and not text:
-        status_code = getattr(last_error, "status_code", getattr(last_error, "code", None))
-        if status_code in ACCESS_ERROR_STATUS_CODES:
-            raise GeminiAccessError(str(last_error)) from last_error
-        print(f"ERROR: Gemini generation failed: {last_error}", file=sys.stderr)
-        sys.exit(1)
-
-    # Strip accidental ```markdown fences if the model wraps the whole thing
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:markdown)?\s*\n", "", text)
-        text = re.sub(r"\n```\s*$", "", text)
-
-    if not text:
-        print("ERROR: Gemini returned an empty response.", file=sys.stderr)
-        sys.exit(1)
-
-    return text
-
+    print(f"ERROR: Grok generation failed: {last_error}", file=sys.stderr)
+    sys.exit(1)
 
 # --------------------------------------------------------------------------
 # Step 4: write the markdown file
@@ -342,16 +304,16 @@ def main() -> None:
     print(f"Next topic: day {next_topic['day']:02d} - {next_topic['title']}")
 
     prompt = build_prompt(next_topic)
-    print("Calling Gemini API...")
+    print("Calling Grok API...")
     try:
-        content = call_gemini(prompt)
-    except GeminiAccessError as exc:
+        content = call_grok(prompt)
+    except GrokAccessError as exc:
         # A denied or invalid project cannot be fixed by retries or by a
         # different model.  Keep the scheduled workflow green and leave the
         # topic pending so it can be generated once access is restored.
         print(
-            "WARNING: Gemini API access was denied; no guide was generated. "
-            "Verify GEMINI_API_KEY and the Google Cloud project's Gemini access. "
+            "WARNING: Grok API access was denied; no guide was generated. "
+            "Verify XAI_API_KEY and the Google Cloud project's Grok access. "
             f"Details: {exc}",
             file=sys.stderr,
         )
